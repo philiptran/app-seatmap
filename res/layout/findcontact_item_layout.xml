@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/findcontact_item_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal" >
+
+    <ImageView
+        android:id="@+id/photo"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/user_icon" />
+
+    <LinearLayout
+        android:id="@+id/details"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/photo"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="2dp"
+            android:paddingLeft="5dp"
+            android:paddingTop="3dp"
+            android:text="Philip Tran Nguyen Phuong"
+            android:textColor="#000000"
+            android:textSize="18dp"
+            android:textStyle="normal" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp" >
+
+            <ImageView
+                android:id="@+id/call_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:padding="0dp"
+                android:src="@drawable/ic_action_call" />
+
+            <TextView
+                android:id="@+id/phone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/call_icon"
+                android:paddingBottom="2dp"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:text="+65 68871234"
+                android:textColor="#666666"
+                android:textSize="16dp" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp" >
+
+            <ImageView
+                android:id="@+id/place_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:padding="0dp"
+                android:src="@drawable/ic_action_place" />
+
+            <TextView
+                android:id="@+id/location"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/place_icon"
+                android:paddingBottom="2dp"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:text="WS3212.A"
+                android:textColor="#666666"
+                android:textSize="16dp" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_alignBottom="@id/details"
+        android:background="#FFCCCCCC" />
+
+</RelativeLayout>

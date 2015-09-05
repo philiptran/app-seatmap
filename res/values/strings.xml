@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">CLSeatMap</string>
+    <string name="action_settings">Settings</string>
+    <string name="hint_search">Search</string>
+    <!-- <string name="EWS_REST_BASEURL">https://192.168.137.1:8043</string> -->
+    <string name="EWS_REST_BASEURL">http://cl-x-rest.elasticbeanstalk.com</string>
+    <string name="dummyMode">true</string>
+</resources>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/contact_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_current_contact_layout"
+        android:orientation="horizontal" >
+
+        <ImageView
+            android:id="@+id/photo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:padding="5dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/user_icon" />
+
+        <LinearLayout
+            android:id="@+id/details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/photo"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="3dp"
+                android:paddingLeft="3dp"
+                android:paddingTop="3dp"
+                android:text="Philip Tran Nguyen Phuong"
+                android:textColor="#000000"
+                android:textSize="18dp"
+                android:textStyle="normal" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="3dp" >
+
+                <ImageView
+                    android:id="@+id/call_icon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:padding="0dp"
+                    android:src="@drawable/ic_action_call" />
+
+                <TextView
+                    android:id="@+id/phone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/call_icon"
+                    android:paddingBottom="3dp"
+                    android:paddingLeft="3dp"
+                    android:paddingTop="3dp"
+                    android:text="+65 68871234"
+                    android:textColor="#666666"
+                    android:textSize="16dp" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="3dp" >
+
+                <ImageView
+                    android:id="@+id/place_icon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:padding="0dp"
+                    android:src="@drawable/ic_action_place" />
+
+                <TextView
+                    android:id="@+id/location"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/place_icon"
+                    android:paddingBottom="3dp"
+                    android:paddingLeft="3dp"
+                    android:paddingTop="3dp"
+                    android:text="WS3212.A"
+                    android:textColor="#666666"
+                    android:textSize="16dp" />
+
+                <TextView
+                    android:id="@+id/nearby"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="10dp"
+                    android:layout_alignParentRight="true"
+                    android:gravity="right"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="3dp"
+                    android:text="Nearby"
+                    android:textColor="#19A3A3"
+                    android:textSize="18dp" />
+
+            </RelativeLayout>
+        </LinearLayout>
+
+        <View
+            android:id="@+id/bottom_bar"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:layout_alignBottom="@id/details"
+            android:background="#FFCCCCCC" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/contact_location"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/contact_info"
+        android:background="@drawable/bg_green_transparent"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="L1"
+            android:textColor="#FFFFFF"
+            android:textSize="24dp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="fill_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:background="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/department"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PSG-CoE (Security)"
+            android:textColor="#FFFFFF"
+            android:textSize="24dp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</RelativeLayout>

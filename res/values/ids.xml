@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Generate an id which can be used when the location menu item is added in MainActivity
+    -->
+    <item name="floor_view" type="id"/>
+    <item name="detail_floor_view" type="id"/>
+    <item name="findcontact_textview" type="id"/>
+    
+    <item type="id" name="balloon_inner_layout" />
+	<item type="id" name="balloon_close" />
+	
+</resources>
