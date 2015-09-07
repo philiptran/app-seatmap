@@ -1,8 +1,11 @@
 package cl.seatmap;
 
+import java.util.List;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -34,7 +37,7 @@ public class MainActivity extends Activity {
 	private OverallFloorView overallFloorView;
 	private DetailFloorView detailFloorView;
 	private ContactLocationDAO contactLocationDAO;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -92,8 +95,6 @@ public class MainActivity extends Activity {
 			}
 			//
 			contact.setContactLocation(cl);
-			// find nearby contacts from embedded DB
-			contact.setNearby(contactLocationDAO.findNearby(cl, NEARBY_DISTANCE));
 			//
 			findContactAutocomplete.setCurrentContact(contact);
 			findContactAutocomplete.showCurrentContactView();
@@ -101,12 +102,61 @@ public class MainActivity extends Activity {
 			//
 			detailFloorView.setCurrentContact(contact);
 			detailFloorView.setVisibility(View.INVISIBLE);
-			
+
 			//
 			overallFloorView.setCurrentContact(contact);
 			overallFloorView.setVisibility(View.VISIBLE);
+			//
+			new AsyncTask<ExchangeContact, Void, Void>() {
+
+				@Override
+				protected Void doInBackground(
+						ExchangeContact... params) {
+					ExchangeContact contact = params[0];
+					// find nearby contacts from embedded DB
+					List<ContactLocation> orderedNearby = contactLocationDAO
+							.findNearby(contact.getContactLocation(), NEARBY_DISTANCE);
+					contact.setNearby(avoidOverlapping(orderedNearby));
+					return null;
+				}
+				private List<ContactLocation> avoidOverlapping(
+						List<ContactLocation> orderedNearby) {
+					if (orderedNearby.size() < 2) {
+						return orderedNearby;
+					}
+					//
+					int MIN_X = 200; // px
+					int MIN_Y = 35; // px
+					ContactLocation lastRef = orderedNearby.get(0);
+					for (int i = 1; i < orderedNearby.size(); i++) {
+						ContactLocation p = orderedNearby.get(i);
+						System.out.println("Process p " + p.toString() + ", lastRef "
+								+ lastRef.toString());
+						int dX = p.getX() - lastRef.getX();
+						int mX = Math.abs(dX);
+						int dY = p.getY() - lastRef.getY();
+						int mY = Math.abs(dY);
+						if ((mY < MIN_Y && mX < MIN_X) || dY <= 0
+						// || (dY <= 0 && mX < MIN_X)
+						) {
+							p.setY(p.getY() + MIN_Y - dY);
+							System.out.println("\t-> Shifted location " + p.toString());
+						} else {
+							System.out.println("\t->No shift!");
+						}
+						//
+						lastRef = p;
+					}
+					//
+					return orderedNearby;
+				}
+				
+			}.execute(contact);
 		}
 	};
+
+	
+
 	private View.OnClickListener markerOnClickListener = new View.OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -195,6 +245,7 @@ public class MainActivity extends Activity {
 						overallFloorView.setAlpha(1f);
 					}
 				});
+		detailFloorView.removeCallouts();
 		detailFloorView.setAlpha(0f);
 		detailFloorView.setVisibility(View.VISIBLE);
 		detailFloorView.animate().alpha(1f).setDuration(TRANSITION_DURATION)

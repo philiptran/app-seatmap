@@ -1,9 +1,11 @@
 package cl.seatmap.widget;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.view.View;
 import android.widget.ImageView;
 import cl.seatmap.R;
 import cl.seatmap.UIUtils;
@@ -21,7 +23,8 @@ public abstract class BaseFloorView extends TileView {
 	protected int width;
 	protected int height;
 	protected ImageView contactMarker;
-
+	protected List<View> callouts;
+	
 	protected BaseFloorView(Context context) {
 		super(context);
 		//
@@ -33,6 +36,8 @@ public abstract class BaseFloorView extends TileView {
 		// addTileViewEventListener(new FloorViewEventListener(this));
 
 		// setTransitionsEnabled(true);
+		
+		callouts = new ArrayList<View>();
 	}
 
 	public ExchangeContact getContact() {
@@ -75,16 +80,23 @@ public abstract class BaseFloorView extends TileView {
 	}
 
 	public void calloutNearby() {
+		callouts.clear();
 		List<ContactLocation> nearby = getContact().getNearby();
 		for (ContactLocation cl : nearby) {
 			TextOverlayView<OverlayItem> callout = new TextOverlayView<OverlayItem>(
 					getContext(), 0);
 			callout.setData(new OverlayItem(cl.getName(), null));
+			callouts.add(callout);
 			//
+			//addCallout(callout, cl.getX(), cl.getY(), -0.5f, -1f);
 			addCallout(callout, cl.getX(), cl.getY(), -0.5f, -1f);
 		}
 	}
-
+	public void removeCallouts() {
+		for(View callout: callouts) {
+			removeCallout(callout);
+		}
+	}
 	/**
      *
      */

@@ -151,7 +151,7 @@ public class ContactLocationDAO extends SQLiteAssetHelper {
 		//
 		Cursor cursor = db
 				.rawQuery(
-						"SELECT * FROM contact_location WHERE (x < ? OR x > ?) AND (y < ? OR y > ?) AND (x != ? AND y != ?)",
+						"SELECT * FROM contact_location WHERE (x < ? OR x > ?) AND (y < ? OR y > ?) AND (x != ? AND y != ?) ORDER BY y,x",
 						selectionArgs);
 
 		try {

@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Some Title"
-        android:textColor="#19A3A3"
+        android:textColor="#941406"
         android:textSize="12dip" />
 
 </LinearLayout>

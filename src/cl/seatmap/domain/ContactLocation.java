@@ -6,76 +6,84 @@ package cl.seatmap.domain;
  *
  */
 public class ContactLocation {
-    private int id;
-    private String location;
-    private int level;
-    private int x;
-    private int y;
-    private String name;
-    private int hx;
-    private int hy;
+	private int id;
+	private String location;
+	private int level;
+	private int x;
+	private int y;
+	private String name;
+	private int hx;
+	private int hy;
 
-    public int getId() {
-        return id;
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(location).append(":(").append(x).append(",").append(y)
+				.append(")->").append(name);
+		return sb.toString();
+	}
 
-    public void setId(int id) {
-        this.id = id;
-    }
+	public int getId() {
+		return id;
+	}
 
-    public String getLocation() {
-        return location;
-    }
+	public void setId(int id) {
+		this.id = id;
+	}
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
+	public String getLocation() {
+		return location;
+	}
 
-    public int getX() {
-        return x;
-    }
+	public void setLocation(String location) {
+		this.location = location;
+	}
 
-    public void setX(int x) {
-        this.x = x;
-    }
+	public int getX() {
+		return x;
+	}
 
-    public int getY() {
-        return y;
-    }
+	public void setX(int x) {
+		this.x = x;
+	}
 
-    public void setY(int y) {
-        this.y = y;
-    }
+	public int getY() {
+		return y;
+	}
 
-    public int getLevel() {
-        return level;
-    }
+	public void setY(int y) {
+		this.y = y;
+	}
 
-    public void setLevel(int level) {
-        this.level = level;
-    }
+	public int getLevel() {
+		return level;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public void setLevel(int level) {
+		this.level = level;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public int getHx() {
-        return hx;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setHx(int hx) {
-        this.hx = hx;
-    }
+	public int getHx() {
+		return hx;
+	}
 
-    public int getHy() {
-        return hy;
-    }
+	public void setHx(int hx) {
+		this.hx = hx;
+	}
 
-    public void setHy(int hy) {
-        this.hy = hy;
-    }
+	public int getHy() {
+		return hy;
+	}
+
+	public void setHy(int hy) {
+		this.hy = hy;
+	}
 }

@@ -98,7 +98,7 @@
                     android:paddingBottom="10dp"
                     android:paddingTop="3dp"
                     android:text="Nearby"
-                    android:textColor="#19A3A3"
+                    android:textColor="#941406"
                     android:textSize="18dp" />
 
             </RelativeLayout>
