@@ -17,6 +17,10 @@
         android:layout_marginRight="3dp"
         android:text="Some Title"
         android:textColor="#941406"
-        android:textSize="12dip" />
+        android:textSize="12dip"
+        android:shadowColor="@color/text_shadow"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="0" />
 
 </LinearLayout>
