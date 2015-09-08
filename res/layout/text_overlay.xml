@@ -4,12 +4,17 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingTop="0dip" >
+    android:paddingTop="0dip"
+    android:background="@drawable/bg_text_overlay" >
 
     <TextView
         android:id="@+id/text_overlay_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="1dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginRight="3dp"
         android:text="Some Title"
         android:textColor="#941406"
         android:textSize="12dip" />
