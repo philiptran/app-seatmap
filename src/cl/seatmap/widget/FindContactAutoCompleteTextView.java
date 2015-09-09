@@ -32,7 +32,7 @@ import cl.seatmap.service.ExchangeContactService;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class FindContactAutoCompleteTextView extends RelativeLayout {
 	final int DRAWABLE_LEFT = 0;
@@ -74,22 +74,26 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		textView.setLayoutParams(params);
 		textView.setSingleLine(true);
 		textView.setLines(1);
-		textView.setTextIsSelectable(true);
+		textView.setCursorVisible(false);
 		textView.setTextColor(Color.BLACK);
 		textView.setTextSize(18);
 		textView.setBackground(getResources().getDrawable(
-				R.drawable.text_border));
+				R.drawable.bg_findcontact_textview));
 		textView.setCompoundDrawables(searchIcon, null, null, null);
 		textView.setCompoundDrawablePadding(5);
 		textView.setPadding(10, 10, 10, 10);
 		textView.setDropDownWidth(LayoutParams.MATCH_PARENT);
 		textView.setDropDownVerticalOffset(0);
 		textView.setDropDownHorizontalOffset(0);
+
+		// overwrite default 3d background for dropdown list
 		textView.setDropDownBackgroundDrawable(getResources().getDrawable(
 				R.drawable.background_dropdown));
 		textView.setHint(R.string.hint_search);
+
+		// no fullscreen mode in landscape
 		textView.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
-		//
+
 		addView(textView);
 		//
 		currentContactView = LayoutInflater.from(context).inflate(
@@ -220,8 +224,6 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 	}
 
 	public void maximize() {
-		textView.setCursorVisible(true);
-		//
 		setBackground(backgroundTransition);
 		backgroundTransition.reverseTransition(1000);
 		//
@@ -272,6 +274,9 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 									"There is no such contact.");
 						} else {
 							findContactAutoCompleteAdapter.clear();
+							findContactAutoCompleteAdapter
+									.setSearchText(textView.getText()
+											.toString());
 							findContactAutoCompleteAdapter.addAll(contacts);
 							findContactAutoCompleteAdapter
 									.notifyDataSetChanged();
@@ -288,6 +293,17 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 	private View.OnTouchListener findContactOnTouchListener = new View.OnTouchListener() {
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
+			v.performClick(); // WHY?
+			//
+			if (!UIUtils.isNetworkAvailable(getContext())) {
+				UIUtils.showAlert(
+						getContext(),
+						"Network Error",
+						"Network is not available. Turn on your WiFi or Data and try again.",
+						"Try Again");
+				return true;
+			}
+			//
 			if (event.getAction() == MotionEvent.ACTION_UP) {
 				if (event.getX() <= searchIcon.getBounds().width()) {
 					Log.d(MainActivity.TAG,
@@ -296,24 +312,13 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 				} else if (event.getX() >= textView.getWidth()
 						- removeIcon.getBounds().width()) {
 					textView.setText("");
-					return true;
-				} else {
-					if (!UIUtils.isNetworkAvailable(getContext())) {
-						UIUtils.showAlert(
-								getContext(),
-								"Network Error",
-								"Network is not available. Turn on your WiFi or Data and try again.",
-								"Try Again");
-					} else {
-						AutoCompleteTextView textView = (AutoCompleteTextView) v;
-						if (textView.hasFocus()) {
-							UIUtils.showSoftInput(textView);
-							maximize();
-						}
-					}
-					return true;
 				}
+				//
+				UIUtils.showSoftInput(textView);
+				maximize();
+				return true;
 			}
+			//
 			return false;
 		}
 	};
@@ -349,6 +354,9 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 					protected void onPostExecute(List<ExchangeContact> contacts) {
 						if (contacts != null) {
 							findContactAutoCompleteAdapter.clear();
+							findContactAutoCompleteAdapter
+									.setSearchText(textView.getText()
+											.toString());
 							findContactAutoCompleteAdapter.addAll(contacts);
 							findContactAutoCompleteAdapter
 									.notifyDataSetChanged();

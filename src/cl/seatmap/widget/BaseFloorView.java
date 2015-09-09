@@ -38,6 +38,8 @@ public abstract class BaseFloorView extends TileView {
 		// setTransitionsEnabled(true);
 		
 		callouts = new ArrayList<View>();
+		
+		setCacheEnabled(true);
 	}
 
 	public ExchangeContact getContact() {

@@ -12,7 +12,7 @@ import android.widget.Toast;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public abstract class UIUtils {
 	public static void showAlert(Context context, String title, String message) {
@@ -51,9 +51,7 @@ public abstract class UIUtils {
 	public static void showSoftInput(View view) {
 		InputMethodManager imm = (InputMethodManager) view.getContext()
 				.getSystemService(Context.INPUT_METHOD_SERVICE);
-		// imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-		// SHOW_IMPLICIT does not work in landscape mode
-		imm.showSoftInput(view, InputMethodManager.SHOW_FORCED);
+		imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
 	}
 
 	/**

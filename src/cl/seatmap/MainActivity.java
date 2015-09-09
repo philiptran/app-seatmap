@@ -26,11 +26,11 @@ import com.qozix.tileview.TileView;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class MainActivity extends Activity {
 	public static final String TAG = "CL-SEAT-MAP";
-	protected static final int TRANSITION_DURATION = 1000;
+	protected static final int TRANSITION_DURATION = 500;
 	private static final int NEARBY_DISTANCE = 1000; // px
 	//
 	private FindContactAutoCompleteTextView findContactAutocomplete;
@@ -100,62 +100,60 @@ public class MainActivity extends Activity {
 			findContactAutocomplete.showCurrentContactView();
 			findContactAutocomplete.minimize();
 			//
+			detailFloorView.setScale(1f);
 			detailFloorView.setCurrentContact(contact);
 			detailFloorView.setVisibility(View.INVISIBLE);
 
 			//
 			overallFloorView.setCurrentContact(contact);
 			overallFloorView.setVisibility(View.VISIBLE);
-			//
-			new AsyncTask<ExchangeContact, Void, Void>() {
-
-				@Override
-				protected Void doInBackground(
-						ExchangeContact... params) {
-					ExchangeContact contact = params[0];
-					// find nearby contacts from embedded DB
-					List<ContactLocation> orderedNearby = contactLocationDAO
-							.findNearby(contact.getContactLocation(), NEARBY_DISTANCE);
-					contact.setNearby(avoidOverlapping(orderedNearby));
-					return null;
-				}
-				private List<ContactLocation> avoidOverlapping(
-						List<ContactLocation> orderedNearby) {
-					if (orderedNearby.size() < 2) {
-						return orderedNearby;
-					}
-					//
-					int MIN_X = 200; // px
-					int MIN_Y = 35; // px
-					ContactLocation lastRef = orderedNearby.get(0);
-					for (int i = 1; i < orderedNearby.size(); i++) {
-						ContactLocation p = orderedNearby.get(i);
-						System.out.println("Process p " + p.toString() + ", lastRef "
-								+ lastRef.toString());
-						int dX = p.getX() - lastRef.getX();
-						int mX = Math.abs(dX);
-						int dY = p.getY() - lastRef.getY();
-						int mY = Math.abs(dY);
-						if ((mY < MIN_Y && mX < MIN_X) || dY <= 0
-						// || (dY <= 0 && mX < MIN_X)
-						) {
-							p.setY(p.getY() + MIN_Y - dY);
-							System.out.println("\t-> Shifted location " + p.toString());
-						} else {
-							System.out.println("\t->No shift!");
-						}
-						//
-						lastRef = p;
-					}
-					//
-					return orderedNearby;
-				}
-				
-			}.execute(contact);
+			// create a new instance as a task is only executed once.
+			new FindNearbyAsyncTask().execute(contact);
 		}
 	};
 
-	
+	private class FindNearbyAsyncTask extends
+			AsyncTask<ExchangeContact, Void, Void> {
+		@Override
+		protected Void doInBackground(ExchangeContact... params) {
+			ExchangeContact contact = params[0];
+			// find nearby contacts from embedded DB
+			List<ContactLocation> orderedNearby = contactLocationDAO
+					.findNearby(contact.getContactLocation(), NEARBY_DISTANCE);
+			contact.setNearby(avoidOverlapping(orderedNearby));
+			return null;
+		}
+
+		private List<ContactLocation> avoidOverlapping(
+				List<ContactLocation> orderedNearby) {
+			if (orderedNearby.size() < 2) {
+				return orderedNearby;
+			}
+			//
+			int MIN_X = 200; // px
+			int MIN_Y = 25; // px
+			ContactLocation lastRef = orderedNearby.get(0);
+			for (int i = 1; i < orderedNearby.size(); i++) {
+				ContactLocation p = orderedNearby.get(i);
+				System.out.println("Process p " + p.toString() + ", lastRef "
+						+ lastRef.toString());
+				int dX = p.getX() - lastRef.getX();
+				int mX = Math.abs(dX);
+				int dY = p.getY() - lastRef.getY();
+				int mY = Math.abs(dY);
+				if ((mY < MIN_Y && mX < MIN_X) || dY <= 0) {
+					p.setY(p.getY() + MIN_Y - dY);
+					System.out.println("\t-> Shifted location " + p.toString());
+				} else {
+					System.out.println("\t->No shift!");
+				}
+				//
+				lastRef = p;
+			}
+			//
+			return orderedNearby;
+		}
+	}
 
 	private View.OnClickListener markerOnClickListener = new View.OnClickListener() {
 		@Override
@@ -182,7 +180,7 @@ public class MainActivity extends Activity {
 	private TileView.TileViewEventListener overallFloorViewEventListener = new TileView.TileViewEventListenerImplementation() {
 		@Override
 		public void onTap(int x, int y) {
-			findContactAutocomplete.hideCurrentContactView();
+			// findContactAutocomplete.hideCurrentContactView();
 		}
 
 		@Override
@@ -236,7 +234,6 @@ public class MainActivity extends Activity {
 	}
 
 	private void transitionToDetailedMap() {
-		findContactAutocomplete.hideCurrentContactView();
 		overallFloorView.animate().alpha(0f).setDuration(TRANSITION_DURATION)
 				.setListener(new AnimatorListenerAdapter() {
 					@Override
@@ -246,6 +243,7 @@ public class MainActivity extends Activity {
 					}
 				});
 		detailFloorView.removeCallouts();
+		detailFloorView.setScale(1f);
 		detailFloorView.setAlpha(0f);
 		detailFloorView.setVisibility(View.VISIBLE);
 		detailFloorView.animate().alpha(1f).setDuration(TRANSITION_DURATION)
