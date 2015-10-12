@@ -117,6 +117,12 @@ public class MainActivity extends Activity {
 		@Override
 		protected Void doInBackground(ExchangeContact... params) {
 			ExchangeContact contact = params[0];
+			ContactLocation cl = contact.getContactLocation();
+			// update cached name if required
+			if (cl != null && !contact.getName().equalsIgnoreCase(cl.getName())) {
+				cl.setName(contact.getName());
+				contactLocationDAO.update(cl);
+			}
 			// find nearby contacts from embedded DB
 			List<ContactLocation> orderedNearby = contactLocationDAO
 					.findNearby(contact.getContactLocation(), NEARBY_DISTANCE);
