@@ -5,10 +5,12 @@ import java.util.List;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -20,6 +22,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
@@ -28,6 +31,7 @@ import cl.seatmap.R;
 import cl.seatmap.UIUtils;
 import cl.seatmap.domain.ExchangeContact;
 import cl.seatmap.service.ExchangeContactService;
+import cl.seatmap.utils.Debouncer;
 
 /**
  * 
@@ -49,6 +53,7 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 	//
 	private ExchangeContact currentContact;
 	private View currentContactView;
+	private ImageView homeIcon;
 
 	//
 	public FindContactAutoCompleteTextView(Context context, AttributeSet attrs) {
@@ -60,11 +65,29 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 				searchIcon.getIntrinsicHeight());
 		removeIcon.setBounds(0, 0, removeIcon.getIntrinsicWidth(),
 				removeIcon.getIntrinsicHeight());
-		//
+
+		// Main Layout
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
 				LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 		setLayoutParams(params);
-		//
+
+		// These two properties kills the softInput
+		// setFocusable(true);
+		// setFocusableInTouchMode(true);
+
+		// Create Home Image
+		Point displaySize = UIUtils.getScreenSize(context);
+		double w = displaySize.x;
+		double h = 0.8 * displaySize.y;
+		params = new RelativeLayout.LayoutParams((int) w, (int) h);
+		params.addRule(RelativeLayout.CENTER_IN_PARENT);
+		homeIcon = new ImageView(context);
+		homeIcon.setId(R.id.home_icon);
+		homeIcon.setImageResource(R.drawable.home);
+		homeIcon.setOnClickListener(homeIconOnClickListener);
+		addView(homeIcon, params);
+
+		// Create AutoCompleteTextView
 		params = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT,
 				LayoutParams.WRAP_CONTENT);
 		params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -95,7 +118,8 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		textView.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
 
 		addView(textView);
-		//
+
+		// Create CurrentContactView and hide it
 		currentContactView = LayoutInflater.from(context).inflate(
 				R.layout.current_contact_layout, null);
 		params = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT,
@@ -113,22 +137,39 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 				.findViewById(R.id.phone);
 		phoneText.setOnClickListener(phoneTextOnClickListener);
 
+		View closeIcon = (View) currentContactView
+				.findViewById(R.id.close_icon);
+		closeIcon.setOnClickListener(currentContactCloseIconOnClickListener);
+
 		if (!isInEditMode()) {
 			// Initialization code that is not letting the Visual Editor draw
 			// properly to be placed in this block.
 
 			exchangeContactService = new ExchangeContactService(context);
-
-			textView.setOnTouchListener(findContactOnTouchListener);
-			textView.addTextChangedListener(findContactTextWatcher);
-			textView.setOnEditorActionListener(findContactOnEditorActionListener);
 			//
 			findContactAutoCompleteAdapter = new FindContactAutoCompleteAdapter(
 					context, null);
+			//
+			textView.setOnTouchListener(findContactOnTouchListener);
+			textView.addTextChangedListener(findContactTextWatcher);
+			textView.setOnEditorActionListener(findContactOnEditorActionListener);
 			textView.setAdapter(findContactAutoCompleteAdapter);
 		}
 	}
 
+	private View.OnClickListener homeIconOnClickListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			textView.setText("");
+			UIUtils.showSoftInput(textView);
+		}
+	};
+	private View.OnClickListener currentContactCloseIconOnClickListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			hideCurrentContactView();
+		}
+	};
 	private View.OnClickListener phoneTextOnClickListener = new View.OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -154,6 +195,10 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		TextView locationText = (TextView) currentContactView
 				.findViewById(R.id.location);
 		locationText.setText(currentContact.getOfficeLocation());
+		//
+		ImageView flagView = (ImageView) currentContactView
+				.findViewById(R.id.flag_icon);
+		flagView.setImageResource(UIUtils.getFlagResource(contact.getCountry()));
 		//
 		TextView levelText = (TextView) currentContactView
 				.findViewById(R.id.level);
@@ -181,20 +226,43 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		locationText.setOnClickListener(listener);
 	}
 
-	/**
-	 * Set click listener for the Nearby text of the
-	 * <code>currentContactView</code>
-	 * 
-	 * @param listener
-	 */
-	public void setNearbyTextOnClickListener(View.OnClickListener listener) {
-		TextView nearbyText = (TextView) currentContactView
-				.findViewById(R.id.nearby);
-		nearbyText.setOnClickListener(listener);
+	public void clearText() {
+		this.textView.setText(null);
+	}
+
+	// /**
+	// * Set click listener for the Nearby text of the
+	// * <code>currentContactView</code>
+	// *
+	// * @param listener
+	// */
+	// public void setNearbyTextOnClickListener(View.OnClickListener listener) {
+	// TextView nearbyText = (TextView) currentContactView
+	// .findViewById(R.id.nearby);
+	// nearbyText.setOnClickListener(listener);
+	// }
+
+	public void showCurrentContactView() {
+		currentContactView.setVisibility(VISIBLE);
+	}
+
+	public void hideCurrentContactView() {
+		currentContactView.setVisibility(INVISIBLE);
+	}
+
+	public void maximize() {
+		textView.setText("");
+		hideCurrentContactView();
+		homeIcon.setVisibility(View.VISIBLE);
+		//
+		setBackground(backgroundTransition);
+		backgroundTransition.reverseTransition(1000);
 	}
 
 	public void minimize() {
+		homeIcon.setVisibility(View.INVISIBLE);
 		textView.setCursorVisible(false);
+		textView.setText(null);
 		//
 		if (!TransitionDrawable.class.isInstance(getBackground())) {
 			setBackground(backgroundTransition);
@@ -207,29 +275,6 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		UIUtils.hideSoftInput(textView);
 	}
 
-	public void toggleCurrentContactView() {
-		if (currentContactView.getVisibility() == VISIBLE) {
-			currentContactView.setVisibility(INVISIBLE);
-		} else {
-			currentContactView.setVisibility(VISIBLE);
-		}
-	}
-
-	public void showCurrentContactView() {
-		currentContactView.setVisibility(VISIBLE);
-	}
-
-	public void hideCurrentContactView() {
-		currentContactView.setVisibility(INVISIBLE);
-	}
-
-	public void maximize() {
-		setBackground(backgroundTransition);
-		backgroundTransition.reverseTransition(1000);
-		//
-		currentContactView.setVisibility(INVISIBLE);
-	}
-
 	private OnEditorActionListener findContactOnEditorActionListener = new OnEditorActionListener() {
 		@Override
 		public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -240,54 +285,17 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 				// hide soft input
 				UIUtils.hideSoftInput(v);
 				//
-				String name = v.getText().toString().trim();
-				if (name.length() == 0
-						|| findContactAutoCompleteAdapter.getCount() != 0) {
-					break;
+				String text = textView.getText().toString().trim();
+				if (text.length() != 0
+						&& findContactAutoCompleteAdapter.getCount() == 0) {
+					textView.setText(null);
+					// UIUtils.showSoftInput(v);
+					return true;
 				}
-
-				//
-				new AsyncTask<String, Void, List<ExchangeContact>>() {
-					/**
-					 * Return NULL if there is error.
-					 */
-					@Override
-					protected List<ExchangeContact> doInBackground(
-							String... params) {
-						String name = params[0];
-						try {
-							return exchangeContactService.findContact(name);
-						} catch (Exception e) {
-							Log.e("RetrieveContactAsyncTask",
-									"Fail to find contact '" + name + "'", e);
-							return null;
-						}
-					}
-
-					@Override
-					protected void onPostExecute(List<ExchangeContact> contacts) {
-						if (contacts == null) {
-							UIUtils.showAlert(getContext(), "Error",
-									"Exchang service is not available.\r\nPlease try again later.");
-						} else if (contacts.isEmpty()) {
-							UIUtils.showAlert(getContext(), "No Records",
-									"There is no such contact.");
-						} else {
-							findContactAutoCompleteAdapter.clear();
-							findContactAutoCompleteAdapter
-									.setSearchText(textView.getText()
-											.toString());
-							findContactAutoCompleteAdapter.addAll(contacts);
-							findContactAutoCompleteAdapter
-									.notifyDataSetChanged();
-							maximize();
-						}
-					}
-				}.execute(name);
 				break;
 			}
 			//
-			return true;
+			return false;
 		}
 	};
 	private View.OnTouchListener findContactOnTouchListener = new View.OnTouchListener() {
@@ -322,6 +330,15 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 			return false;
 		}
 	};
+	//
+	private Debouncer<String> findContactDebouncer = new Debouncer<String>(
+			new Debouncer.Function<String>() {
+				@Override
+				public void call(String text) {
+					new FindContactAsyncTask(text).execute();
+				}
+			}, 300);
+	//
 	private TextWatcher findContactTextWatcher = new TextWatcher() {
 		@Override
 		public void beforeTextChanged(CharSequence s, int start, int count,
@@ -332,50 +349,64 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		@Override
 		public void onTextChanged(CharSequence s, int start, int before,
 				int count) {
-			if (start - before > 1) {
-				new AsyncTask<String, Void, List<ExchangeContact>>() {
-					/**
-					 * Return NULL if there is error.
-					 */
-					@Override
-					protected List<ExchangeContact> doInBackground(
-							String... params) {
-						String name = params[0];
-						try {
-							return exchangeContactService.findContact(name);
-						} catch (Exception e) {
-							Log.e("RetrieveContactAsyncTask",
-									"Fail to find contact '" + name + "'", e);
-							return null;
-						}
-					}
-
-					@Override
-					protected void onPostExecute(List<ExchangeContact> contacts) {
-						if (contacts != null) {
-							findContactAutoCompleteAdapter.clear();
-							findContactAutoCompleteAdapter
-									.setSearchText(textView.getText()
-											.toString());
-							findContactAutoCompleteAdapter.addAll(contacts);
-							findContactAutoCompleteAdapter
-									.notifyDataSetChanged();
-							maximize();
-						}
-					}
-				}.execute(s.toString());
-			}
+			// do nothing
 		}
 
 		@Override
 		public void afterTextChanged(Editable s) {
 			// display remove text icon only if there is text
-			if (s != null && s.length() > 1) {
+			String text = textView.getText().toString().trim();
+			if (!text.isEmpty()) {
 				textView.setCompoundDrawables(searchIcon, null, removeIcon,
 						null);
+				// debounce the search
+				findContactDebouncer.call(text);
 			} else {
 				textView.setCompoundDrawables(searchIcon, null, null, null);
+				// destroy pending task
+				findContactDebouncer.destroy();
 			}
 		}
 	};
+
+	private class FindContactAsyncTask extends
+			AsyncTask<String, Void, List<ExchangeContact>> {
+		private String text;
+
+		public FindContactAsyncTask(String text) {
+			this.text = text;
+		}
+
+		@Override
+		protected List<ExchangeContact> doInBackground(String... params) {
+			try {
+				return exchangeContactService.findContact(text);
+			} catch (Exception e) {
+				Log.e("RetrieveContactAsyncTask", "Fail to find contact '"
+						+ text + "'", e);
+				return null; // to tell onPostExecute that an error has
+								// occurred.
+			}
+		}
+
+		@Override
+		protected void onPostExecute(List<ExchangeContact> contacts) {
+			if (this.text.equalsIgnoreCase(textView.getText().toString())) {
+				if (contacts == null) {
+					UIUtils.showAlert(getContext(), "Error",
+							"Exchang service is not available.\r\nPlease try again later.");
+				} else if (contacts.isEmpty()) {
+					UIUtils.showAlert(getContext(), "Not Found",
+							"Sorry, the name could not be found.");
+				} else {
+					findContactAutoCompleteAdapter.clear();
+					findContactAutoCompleteAdapter.setSearchText(this.text);
+					findContactAutoCompleteAdapter.addAll(contacts);
+					findContactAutoCompleteAdapter.notifyDataSetChanged();
+					// hide the home icon
+					homeIcon.setVisibility(View.INVISIBLE);
+				}
+			}
+		}
+	}
 }

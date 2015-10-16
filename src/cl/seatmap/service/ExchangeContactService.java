@@ -53,7 +53,7 @@ public class ExchangeContactService {
 		try {
 			// String response = retrieveContact(name);
 			Map<String, String> params = new HashMap<String, String>();
-			params.put("country", "Singapore");
+			//params.put("country", "Singapore");
 			params.put("name", name);
 			if (dummyMode) {
 				params.put("dummy", "true");
@@ -67,10 +67,11 @@ public class ExchangeContactService {
 				JSONObject item = jsonArray.getJSONObject(i);
 				//
 				ExchangeContact contact = new ExchangeContact(
-						item.getString("name"), item.getString("email"),
-						item.getString("department"), item.getString("phone"),
-						item.getString("mobile"),
-						item.getString("officeLocation"));
+						item.getString("name"), item.getString("title"),
+						item.getString("email"), item.getString("department"),
+						item.getString("phone"), item.getString("mobile"),
+						item.getString("officeLocation"),
+						item.getString("country"));
 				list.add(contact);
 			}
 			return list;

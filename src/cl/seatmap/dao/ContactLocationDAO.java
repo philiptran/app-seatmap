@@ -14,7 +14,7 @@ import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class ContactLocationDAO extends SQLiteAssetHelper {
 	// All Static variables
@@ -45,7 +45,17 @@ public class ContactLocationDAO extends SQLiteAssetHelper {
 		// This database is read-only.
 		setForcedUpgrade();
 	}
-
+	/**
+	 * Forces the database to reload from the default asset file.
+	 */
+	public static void forceDatabaseReload(Context context){
+		ContactLocationDAO dbHelper = new ContactLocationDAO(context);
+	    dbHelper.setForcedUpgrade();
+	    SQLiteDatabase db = dbHelper.getWritableDatabase();
+	    db.setVersion(-1);
+	    db.close();
+	    db = dbHelper.getWritableDatabase();
+	}
 	// @Override
 	// public void onCreate(SQLiteDatabase db) {
 	// String createSQL = "CREATE TABLE " + TABLE_CONTACT_LOCATION + "("
@@ -136,24 +146,30 @@ public class ContactLocationDAO extends SQLiteAssetHelper {
 		}
 	}
 
+	/**
+	 * Exclude location with empty name
+	 * 
+	 * @param cl
+	 * @param distance
+	 * @return
+	 */
 	public List<ContactLocation> findNearby(ContactLocation cl, int distance) {
 		List<ContactLocation> nearbyList = new ArrayList<ContactLocation>();
-		int x = cl.getX();
-		int y = cl.getY();
-		int upperX = x + distance;
-		int lowerX = x - distance;
-		int upperY = y + distance;
-		int lowerY = y - distance;
-		String[] selectionArgs = new String[] { "" + upperX, "" + lowerX,
-				"" + upperY, "" + lowerY, "" + x, "" + y };
+		String[] selectionArgs = new String[] { cl.getX() + "", cl.getY() + "" };
 		//
 		SQLiteDatabase db = this.getReadableDatabase();
-		//
-		Cursor cursor = db
-				.rawQuery(
-						"SELECT * FROM contact_location WHERE (x < ? OR x > ?) AND (y < ? OR y > ?) AND (x != ? AND y != ?) ORDER BY y,x",
-						selectionArgs);
-
+		// Cursor cursor = db.rawQuery(
+		// "SELECT *, ((x-?)*(x-?)+(y-?)*(y-?)) as D FROM contact_location WHERE "
+		// + "(name is not null OR name != '') AND "
+		// + "(D>0 AND D<" + distance * distance + ") ORDER BY D",
+		// selectionArgs);
+		// Use Manhattan distance
+		Cursor cursor = db.rawQuery(
+				"SELECT *, (abs(x-?)+abs(y-?)) as D FROM contact_location WHERE "
+						+ "(name is not null OR name != '') AND "
+						+ "(D>0 AND D<" + distance + ") ORDER BY D",
+				selectionArgs);
+		// ORDER BY y, x
 		try {
 			if (cursor == null || cursor.getCount() == 0) {
 				return nearbyList;
@@ -180,5 +196,49 @@ public class ContactLocationDAO extends SQLiteAssetHelper {
 			db.close();
 		}
 		return nearbyList;
+	}
+
+	public ContactLocation findContactAt(int x, int y) {
+		String[] selectionArgs = new String[] { x + "", y + "" };
+		int delta = 350;
+		//
+		SQLiteDatabase db = this.getReadableDatabase();
+		// Cursor cursor = db.rawQuery(
+		// "SELECT *, ((x-?)*(x-?)+(y-?)*(y-?)) as D FROM contact_location WHERE "
+		// + "(name is not null OR name != '') AND "
+		// + "(D>0 AND D<" + delta * delta + ") ORDER BY D",
+		// selectionArgs);
+		// Use Manhattan distance
+		Cursor cursor = db
+				.rawQuery(
+						"SELECT *, (abs(x-?)+abs(y-?)) as D FROM contact_location WHERE "
+								+ "(name is not null OR name != '') AND "
+								+ "(D>0 AND D<" + delta + ") ORDER BY D",
+						selectionArgs);
+		//
+		ContactLocation c = null;
+		try {
+			if (cursor == null || cursor.getCount() == 0) {
+				return c;
+			}
+			// only get the first record (closet location)
+			cursor.moveToNext();
+			//
+			c = new ContactLocation();
+			c.setId(cursor.getInt(0));
+			c.setLocation(cursor.getString(1));
+			c.setLevel(cursor.getInt(2));
+			c.setX(cursor.getInt(3));
+			c.setY(cursor.getInt(4));
+			c.setName(cursor.getString(5));
+			c.setHx(cursor.getInt(6));
+			c.setHy(cursor.getInt(7));
+			//
+			return c;
+		} finally {
+			if (cursor != null)
+				cursor.close();
+			db.close();
+		}
 	}
 }

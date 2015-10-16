@@ -12,8 +12,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 import cl.seatmap.R;
+import cl.seatmap.UIUtils;
 import cl.seatmap.domain.ExchangeContact;
 
 /**
@@ -49,6 +51,12 @@ public class FindContactAutoCompleteAdapter extends
 	}
 
 	@Override
+	public void clear() {
+		super.clear();
+		this.contacts.clear();
+	}
+
+	@Override
 	public void addAll(Collection<? extends ExchangeContact> collection) {
 		this.contacts.clear();
 		this.contacts.addAll(collection);
@@ -76,16 +84,25 @@ public class FindContactAutoCompleteAdapter extends
 		ExchangeContact contact = getItem(position);
 
 		TextView nameText = (TextView) row.findViewById(R.id.name);
-		String name = contact.getName().replaceAll("(?i)(" + searchText + ")",
+		String name = UIUtils.nullSafe(contact.getName());
+		name = name.replaceAll("(?i)(" + searchText + ")",
 				"<font color='#19A3A3'><b>$1</b></font>");
 		nameText.setText(Html.fromHtml(name));
 
 		TextView phoneText = (TextView) row.findViewById(R.id.phone);
-		phoneText.setText(contact.getPhone());
+		String phone = UIUtils.nullSafe(contact.getPhone());
+		phone = phone.replaceAll("(?i)(" + searchText + ")",
+				"<font color='#19A3A3'><b>$1</b></font>");
+		phoneText.setText(Html.fromHtml(phone));
 
 		TextView locationText = (TextView) row.findViewById(R.id.location);
-		locationText.setText(contact.getOfficeLocation());
+		String location = UIUtils.nullSafe(contact.getOfficeLocation());
+		location = location.replaceAll("(?i)(" + searchText + ")",
+				"<font color='#19A3A3'><b>$1</b></font>");
+		locationText.setText(Html.fromHtml(location));
 
+		ImageView flagView = (ImageView) row.findViewById(R.id.flag_icon);
+		flagView.setImageResource(UIUtils.getFlagResource(contact.getCountry()));
 		//
 		// ImageView photo = (ImageView) row.findViewById(R.id.photo);
 		// photo.setImageBitmap(defaultPhoto);

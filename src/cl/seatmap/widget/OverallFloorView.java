@@ -10,9 +10,12 @@ import cl.seatmap.domain.ExchangeContact;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class OverallFloorView extends BaseFloorView {
+	public static final int WIDTH = 1535;
+	public static final int HEIGHT = 1260;
+
 	public OverallFloorView(Context context) {
 		this(context, null);
 	}
@@ -20,16 +23,13 @@ public class OverallFloorView extends BaseFloorView {
 	public OverallFloorView(Context context, AttributeSet attrs) {
 		super(context);
 		//
-		width = 1535;
-		height = 1260;
-		//
 		setId(R.id.floor_view);
 		//
 		LayoutParams params = new LayoutParams(LayoutParams.MATCH_PARENT,
 				LayoutParams.MATCH_PARENT);
 		setLayoutParams(params);
 		//
-		setSize(width, height);
+		setSize(WIDTH, HEIGHT);
 		setScaleToFit(true);
 		setMarkerAnchorPoints(-0.5f, -1.0f);
 		//

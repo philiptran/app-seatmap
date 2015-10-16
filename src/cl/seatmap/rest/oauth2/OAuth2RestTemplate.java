@@ -28,7 +28,7 @@ import android.util.Base64;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class OAuth2RestTemplate {
 	private static final int CONNECTION_TIMEOUT_MS = 2 * 1000;
@@ -100,6 +100,11 @@ public class OAuth2RestTemplate {
 			// read the response
 			int responseCode = connection.getResponseCode();
 			if (responseCode != HttpURLConnection.HTTP_OK) {
+				if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+					// access token may have been invalidated
+					this.accessToken = null;
+				}
+				//
 				throw new RestServiceException("HTTP " + responseCode + ": "
 						+ connection.getResponseMessage());
 			}

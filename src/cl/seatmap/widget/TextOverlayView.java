@@ -45,6 +45,10 @@ public class TextOverlayView<Item extends OverlayItem> extends FrameLayout {
 	 *            - The bottom padding (in pixels) to be applied when rendering
 	 *            this view.
 	 */
+	public TextOverlayView(Context context) {
+		this(context, 0);
+	}
+
 	public TextOverlayView(Context context, int bottomOffset) {
 
 		super(context);

@@ -6,87 +6,113 @@ import java.util.List;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class ExchangeContact {
-    private String name;
-    private String email;
-    private String department;
-    private String phone;
-    private String mobile;
-    private String officeLocation;
-    private ContactLocation contactLocation;
-    private List<ContactLocation> nearby = new ArrayList<ContactLocation>();
+	private String name;
+	private String title;
+	private String email;
+	private String department;
+	private String phone;
+	private String mobile;
+	private String officeLocation;
+	private String country;
+	private ContactLocation contactLocation;
+	private List<ContactLocation> nearby = new ArrayList<ContactLocation>();
 
-    public ExchangeContact(String name, String email, String department, String phone, String mobile, String officeLocation) {
-        this.name = name;
-        this.email = email;
-        this.department = department;
-        this.phone = phone;
-        this.mobile = mobile;
-        this.officeLocation = officeLocation;
-    }
+	public ExchangeContact(String name, String title, String email,
+			String department, String phone, String mobile, String location,
+			String country) {
+		this.name = nullSafe(name);
+		this.title = nullSafe(title);
+		this.email = nullSafe(email);
+		this.department = nullSafe(department);
+		this.phone = nullSafe(phone);
+		this.mobile = nullSafe(mobile);
+		this.officeLocation = nullSafe(location);
+		this.country = nullSafe(country);
+	}
 
-    @Override
-    public String toString() {
-        return name;
-    }
+	private String nullSafe(String s) {
+		return s == null || "null".equals(s) ? "" : s;
+	}
 
-    public String getName() {
-        return name;
-    }
+	@Override
+	public String toString() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public String getEmail() {
-        return email;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public String getTitle() {
+		return title;
+	}
 
-    public String getDepartment() {
-        return department;
-    }
+	public void setTitle(String title) {
+		this.title = title == null ? "" : title;
+	}
 
-    public void setDepartment(String department) {
-        this.department = department;
-    }
+	public String getEmail() {
+		return email;
+	}
 
-    public String getPhone() {
-        return phone;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+	public String getDepartment() {
+		return department;
+	}
 
-    public String getMobile() {
-        return mobile;
-    }
+	public void setDepartment(String department) {
+		this.department = department;
+	}
 
-    public void setMobile(String mobile) {
-        this.mobile = mobile;
-    }
+	public String getPhone() {
+		return phone;
+	}
 
-    public String getOfficeLocation() {
-        return officeLocation;
-    }
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
 
-    public void setOfficeLocation(String officeLocation) {
-        this.officeLocation = officeLocation;
-    }
+	public String getMobile() {
+		return mobile;
+	}
 
-    public ContactLocation getContactLocation() {
-        return contactLocation;
-    }
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
 
-    public void setContactLocation(ContactLocation contactLocation) {
-        this.contactLocation = contactLocation;
-    }
+	public String getOfficeLocation() {
+		return officeLocation;
+	}
+
+	public void setOfficeLocation(String officeLocation) {
+		this.officeLocation = officeLocation;
+	}
+
+	public ContactLocation getContactLocation() {
+		return contactLocation;
+	}
+
+	public void setContactLocation(ContactLocation contactLocation) {
+		this.contactLocation = contactLocation;
+	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
 
 	public List<ContactLocation> getNearby() {
 		return nearby;
@@ -95,5 +121,5 @@ public class ExchangeContact {
 	public void setNearby(List<ContactLocation> nearby) {
 		this.nearby = nearby;
 	}
-    
+
 }

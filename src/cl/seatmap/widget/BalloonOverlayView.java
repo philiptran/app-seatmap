@@ -57,6 +57,10 @@ public class BalloonOverlayView<Item extends OverlayItem> extends FrameLayout {
 	 *            - The bottom padding (in pixels) to be applied when rendering
 	 *            this view.
 	 */
+	public BalloonOverlayView(Context context) {
+		this(context, 0);
+	}
+
 	public BalloonOverlayView(Context context, int balloonBottomOffset) {
 
 		super(context);

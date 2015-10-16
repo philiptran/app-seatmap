@@ -1,10 +1,11 @@
 package cl.seatmap;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,7 +20,6 @@ import cl.seatmap.domain.ContactLocation;
 import cl.seatmap.domain.ExchangeContact;
 import cl.seatmap.widget.DetailFloorView;
 import cl.seatmap.widget.FindContactAutoCompleteTextView;
-import cl.seatmap.widget.OverallFloorView;
 
 import com.qozix.tileview.TileView;
 
@@ -31,12 +31,12 @@ import com.qozix.tileview.TileView;
 public class MainActivity extends Activity {
 	public static final String TAG = "CL-SEAT-MAP";
 	protected static final int TRANSITION_DURATION = 500;
-	private static final int NEARBY_DISTANCE = 1000; // px
+	private static final int NEARBY_DISTANCE = 350;
 	//
 	private FindContactAutoCompleteTextView findContactAutocomplete;
-	private OverallFloorView overallFloorView;
 	private DetailFloorView detailFloorView;
 	private ContactLocationDAO contactLocationDAO;
+	private boolean detailMarkerSwitchOn = true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,31 +46,28 @@ public class MainActivity extends Activity {
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.activity_main);
 		//
+		contactLocationDAO = new ContactLocationDAO(this);
+		// TODO how to force database reload only for first run after the upgrade?
+		ContactLocationDAO.forceDatabaseReload(this);
+		//
 		findContactAutocomplete = (FindContactAutoCompleteTextView) findViewById(R.id.findcontact_autocomplete);
 		findContactAutocomplete
 				.setOnItemClickListener(findContactOnItemClickListener);
 		findContactAutocomplete
 				.setLocationTextOnClickListener(currentLocationTextOnClickListener);
-		findContactAutocomplete
-				.setNearbyTextOnClickListener(nearbyTextOnClickListener);
 		//
-		overallFloorView = new OverallFloorView(this);
-		overallFloorView
-				.addTileViewEventListener(overallFloorViewEventListener);
-		overallFloorView.setMarkerOnClickListener(markerOnClickListener);
-		//
-		detailFloorView = new DetailFloorView(this);
+		detailFloorView = new DetailFloorView(this, contactLocationDAO);
 		detailFloorView.addTileViewEventListener(detailFloorViewEventListener);
 		detailFloorView.setMarkerOnClickListener(detailMarkerOnClickListener);
 		detailFloorView.setVisibility(View.INVISIBLE);
 		//
 		RelativeLayout main = (RelativeLayout) findViewById(R.id.activity_main);
-		main.addView(overallFloorView);
 		main.addView(detailFloorView);
 		main.bringChildToFront(findContactAutocomplete);
 		main.refreshDrawableState();
+		
 		//
-		contactLocationDAO = new ContactLocationDAO(this);
+		findContactAutocomplete.maximize();
 	}
 
 	private AdapterView.OnItemClickListener findContactOnItemClickListener = new AdapterView.OnItemClickListener() {
@@ -79,36 +76,55 @@ public class MainActivity extends Activity {
 				long id) {
 			ExchangeContact contact = (ExchangeContact) parent.getAdapter()
 					.getItem(position);
-
+			// default to officeLocation
+			String location = contact.getOfficeLocation();
+			if (contact.getTitle().toLowerCase().contains("meeting room")) {
+				// extract the meeting room number from the name
+				Pattern pattern = Pattern.compile("^(\\d-.*):");
+				Matcher m = pattern.matcher(contact.getName());
+				if (m.find()) {
+					location = m.group(1);
+				} else {
+					// Room that not follow convention -> use the name to look
+					// up
+					location = contact.getName();
+				}
+			}
 			// retrieve contact location from embedded DB
-			ContactLocation cl = contactLocationDAO.get(contact
-					.getOfficeLocation());
-
-			if (cl == null) {
-				String errorMessage = "No location information for "
-						+ contact.getOfficeLocation();
+			ContactLocation cl = contactLocationDAO.get(location);
+			if (cl == null || (cl.getX() == 0 && cl.getY() == 0)
+					|| cl.getX() >= DetailFloorView.WIDTH
+					|| cl.getY() >= DetailFloorView.HEIGHT) {
+				String errorMessage = "Could not find location '" + location
+						+ "'";
+				if (cl != null) {
+					errorMessage = "Invalid mapping (" + cl.getX() + ", "
+							+ cl.getY() + ") for location '" + location + "'";
+				}
 				//
 				Log.e(TAG, errorMessage);
-				UIUtils.showAlert(parent.getContext(), "Missing Location Info",
-						errorMessage);
+				UIUtils.showAlert(parent.getContext(), "Not Found",
+						errorMessage, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+								findContactAutocomplete.maximize();
+							}
+						});
 				return;
 			}
 			//
 			contact.setContactLocation(cl);
+			// find neighbors in the background
+			new FindNearbyAsyncTask().execute(contact);
 			//
 			findContactAutocomplete.setCurrentContact(contact);
 			findContactAutocomplete.showCurrentContactView();
 			findContactAutocomplete.minimize();
 			//
+			detailMarkerSwitchOn = true;
 			detailFloorView.setScale(1f);
 			detailFloorView.setCurrentContact(contact);
-			detailFloorView.setVisibility(View.INVISIBLE);
-
-			//
-			overallFloorView.setCurrentContact(contact);
-			overallFloorView.setVisibility(View.VISIBLE);
-			// create a new instance as a task is only executed once.
-			new FindNearbyAsyncTask().execute(contact);
+			detailFloorView.setVisibility(View.VISIBLE);
 		}
 	};
 
@@ -126,8 +142,17 @@ public class MainActivity extends Activity {
 			// find nearby contacts from embedded DB
 			List<ContactLocation> orderedNearby = contactLocationDAO
 					.findNearby(contact.getContactLocation(), NEARBY_DISTANCE);
-			contact.setNearby(avoidOverlapping(orderedNearby));
+
+			// only show the first 4 neighbors
+			orderedNearby = orderedNearby.subList(0,
+					orderedNearby.size() < 4 ? orderedNearby.size() : 4);
+			contact.setNearby(orderedNearby);
 			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			detailFloorView.updateNeighbors();
 		}
 
 		private List<ContactLocation> avoidOverlapping(
@@ -137,7 +162,7 @@ public class MainActivity extends Activity {
 			}
 			//
 			int MIN_X = 200; // px
-			int MIN_Y = 25; // px
+			int MIN_Y = 40; // px
 			ContactLocation lastRef = orderedNearby.get(0);
 			for (int i = 1; i < orderedNearby.size(); i++) {
 				ContactLocation p = orderedNearby.get(i);
@@ -161,103 +186,37 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private View.OnClickListener markerOnClickListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			findContactAutocomplete.toggleCurrentContactView();
-		}
-	};
-
-	private View.OnClickListener detailMarkerOnClickListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			findContactAutocomplete.toggleCurrentContactView();
-		}
-	};
 	private TileView.TileViewEventListener detailFloorViewEventListener = new TileView.TileViewEventListenerImplementation() {
 		@Override
 		public void onScaleChanged(double scale) {
 			Log.d(MainActivity.TAG, "Detailed Floor - scale " + scale);
-			if (scale < 0.35f) {
-				transitionToOverviewMap();
-			}
 		}
 	};
-	private TileView.TileViewEventListener overallFloorViewEventListener = new TileView.TileViewEventListenerImplementation() {
+	private View.OnClickListener detailMarkerOnClickListener = new View.OnClickListener() {
 		@Override
-		public void onTap(int x, int y) {
-			// findContactAutocomplete.hideCurrentContactView();
-		}
-
-		@Override
-		public void onDoubleTap(int x, int y) {
-			transitionToDetailedMap();
-		}
-
-		@Override
-		public void onZoomStart(double scale) {
-			transitionToDetailedMap();
+		public void onClick(View v) {
+			detailMarkerSwitchOn = !detailMarkerSwitchOn;
+			if(detailMarkerSwitchOn) {
+				detailFloorView.showNeighbors();
+				findContactAutocomplete.showCurrentContactView();
+			} else {
+				detailFloorView.hideNeighbors();
+				findContactAutocomplete.hideCurrentContactView();
+			}	
 		}
 	};
+
 	private OnClickListener currentLocationTextOnClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View paramView) {
-			if (overallFloorView.getVisibility() == View.INVISIBLE) {
-				transitionToOverviewMap();
-			}
+			// TODO
 		}
 	};
-	private View.OnClickListener nearbyTextOnClickListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			if (detailFloorView.getVisibility() == View.INVISIBLE) {
-				transitionToDetailedMap();
-			}
-			//
-			detailFloorView.calloutNearby();
-		}
-	};
-
-	private void transitionToOverviewMap() {
-		detailFloorView.animate().alpha(0f).setDuration(TRANSITION_DURATION)
-				.setListener(new AnimatorListenerAdapter() {
-					@Override
-					public void onAnimationEnd(Animator animation) {
-						detailFloorView.setVisibility(View.INVISIBLE);
-						detailFloorView.setAlpha(1f);
-					}
-				});
-		overallFloorView.setAlpha(0f);
-		overallFloorView.setScale(1f);
-		overallFloorView.setVisibility(View.VISIBLE);
-		overallFloorView.animate().alpha(1f).setDuration(TRANSITION_DURATION)
-				.setListener(new AnimatorListenerAdapter() {
-					@Override
-					public void onAnimationEnd(Animator animation) {
-						overallFloorView.moveToContact();
-					}
-				});
-	}
-
-	private void transitionToDetailedMap() {
-		overallFloorView.animate().alpha(0f).setDuration(TRANSITION_DURATION)
-				.setListener(new AnimatorListenerAdapter() {
-					@Override
-					public void onAnimationEnd(Animator animation) {
-						overallFloorView.setVisibility(View.INVISIBLE);
-						overallFloorView.setAlpha(1f);
-					}
-				});
-		detailFloorView.removeCallouts();
-		detailFloorView.setScale(1f);
-		detailFloorView.setAlpha(0f);
-		detailFloorView.setVisibility(View.VISIBLE);
-		detailFloorView.animate().alpha(1f).setDuration(TRANSITION_DURATION)
-				.setListener(new AnimatorListenerAdapter() {
-					@Override
-					public void onAnimationEnd(Animator animation) {
-						detailFloorView.moveToContact();
-					}
-				});
-	}
+	// private View.OnClickListener nearbyTextOnClickListener = new
+	// View.OnClickListener() {
+	// @Override
+	// public void onClick(View v) {
+	// detailFloorView.calloutNearby();
+	// }
+	// };
 }

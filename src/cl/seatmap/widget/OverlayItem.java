@@ -3,7 +3,7 @@ package cl.seatmap.widget;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class OverlayItem {
 	protected String title;
@@ -12,6 +12,10 @@ public class OverlayItem {
 
 	public OverlayItem() {
 		this("Title", "description", null);
+	}
+
+	public OverlayItem(String title) {
+		this(title, null, null);
 	}
 
 	public OverlayItem(String title, String snippet) {

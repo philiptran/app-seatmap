@@ -17,29 +17,22 @@ import com.qozix.tileview.TileView;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public abstract class BaseFloorView extends TileView {
-	protected int width;
-	protected int height;
 	protected ImageView contactMarker;
-	protected List<View> callouts;
-	
+	protected List<View> neighborViews; // should we use ViewGroup?
+
 	protected BaseFloorView(Context context) {
 		super(context);
+		setCacheEnabled(true);
 		//
 		contactMarker = new ImageView(context);
 		contactMarker.setImageResource(R.drawable.map_pin_red2);
 		//
-		addMarker(contactMarker, 0, 0);
-
 		// addTileViewEventListener(new FloorViewEventListener(this));
 
-		// setTransitionsEnabled(true);
-		
-		callouts = new ArrayList<View>();
-		
-		setCacheEnabled(true);
+		neighborViews = new ArrayList<View>();
 	}
 
 	public ExchangeContact getContact() {
@@ -57,11 +50,13 @@ public abstract class BaseFloorView extends TileView {
 	public void setCurrentContact(ExchangeContact contact) {
 		ContactLocation cl = contact.getContactLocation();
 		if (cl == null) {
+			// should not be here
 			UIUtils.showAlert(getContext(), "Error", "Application Error");
 			return;
 		}
 		contactMarker.setTag(contact);
 		moveMarker(contactMarker, cl.getX(), cl.getY());
+		// defer updateNeighbors to the asyncTask in MainActivity
 		//
 		slideToAndCenter(cl.getX(), cl.getY());
 	}
@@ -81,24 +76,68 @@ public abstract class BaseFloorView extends TileView {
 		// contactMarker.setVisibility(View.INVISIBLE);
 	}
 
-	public void calloutNearby() {
-		callouts.clear();
-		List<ContactLocation> nearby = getContact().getNearby();
-		for (ContactLocation cl : nearby) {
-			TextOverlayView<OverlayItem> callout = new TextOverlayView<OverlayItem>(
-					getContext(), 0);
-			callout.setData(new OverlayItem(cl.getName(), null));
-			callouts.add(callout);
+	protected void removeNeighbors() {
+		for (View v : neighborViews) {
+			removeMarker(v);
+		}
+		neighborViews.clear();
+	}
+
+	public void updateNeighbors() {
+		removeNeighbors();
+		//
+		ExchangeContact contact = getContact();
+		List<ContactLocation> neighbors = contact.getNearby();
+		for (ContactLocation cl : neighbors) {
+			String name = cl.getName();
+			if (name == null || name.isEmpty()) {
+				// should not be here
+				continue;
+			}
 			//
-			//addCallout(callout, cl.getX(), cl.getY(), -0.5f, -1f);
-			addCallout(callout, cl.getX(), cl.getY(), -0.5f, -1f);
+			View view = createNeighborView(cl);
+			addMarker(view, cl.getX(), cl.getY());
+			neighborViews.add(view);
+		}
+		// need to remove and add contactMarker again as bringChildToFront is
+		// not supported
+		// bringChildToFront(contactMarker);
+		removeMarker(contactMarker);
+		ContactLocation cl = contact.getContactLocation();
+		addMarker(contactMarker, cl.getX(), cl.getY());
+	}
+
+	private View createNeighborView(ContactLocation cl) {
+		// BalloonOverlayView<OverlayItem> view = new
+		// BalloonOverlayView<OverlayItem>(
+		// getContext());
+		// view.setData(new OverlayItem(shortenName(cl.getName()), null));
+
+		// Use simple text overlay
+		TextOverlayView<OverlayItem> view = new TextOverlayView<OverlayItem>(
+				getContext(), 0);
+		view.setData(new OverlayItem(cl.getName()));
+		view.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				v.setVisibility(View.INVISIBLE);
+			}
+		});
+		return view;
+	}
+
+	public void hideNeighbors() {
+		for (View view : neighborViews) {
+			view.setVisibility(View.INVISIBLE);
 		}
 	}
-	public void removeCallouts() {
-		for(View callout: callouts) {
-			removeCallout(callout);
+
+	public void showNeighbors() {
+		for (View view : neighborViews) {
+			view.setVisibility(View.VISIBLE);
 		}
 	}
+
 	/**
      *
      */
@@ -121,8 +160,8 @@ public abstract class BaseFloorView extends TileView {
 			Point p = tileView.getPositionManager().translate(x / scale,
 					y / scale);
 			//
-			// UIUtils.showToast(getContext(), "Tap at " + x + ", " + y
-			// + "; Translated: " + p.x + ", " + p.y);
+			UIUtils.showToast(getContext(), "Tap at " + x + ", " + y
+					+ "; Translated: " + p.x + ", " + p.y);
 			//
 			tileView.slideToAndCenter(p.x, p.y);
 			//
