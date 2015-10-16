@@ -1,26 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/text_overlay_layout"
-    android:layout_width="wrap_content"
+    android:layout_width="120dp"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingTop="0dip"
-    android:background="@drawable/bg_text_overlay" >
+    android:background="@drawable/balloon_overlay_unfocused" >
 
     <TextView
         android:id="@+id/text_overlay_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="1dp"
-        android:layout_marginLeft="3dp"
-        android:layout_marginRight="3dp"
-        android:text="Some Title"
-        android:textColor="#941406"
-        android:textSize="12dip"
-        android:shadowColor="@color/text_shadow"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="0" />
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:text="Some Title Long Long Long"
+        android:textColor="#19A3A3"
+        android:textSize="14dp"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:gravity="center"/>
 
 </LinearLayout>
