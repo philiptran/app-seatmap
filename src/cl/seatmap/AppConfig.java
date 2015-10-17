@@ -7,24 +7,25 @@ import android.content.SharedPreferences;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class AppConfig {
-    private static final String PREF_FILE = "CLSeatMapPrefs";
-    private SharedPreferences appSharedPrefs;
-    private SharedPreferences.Editor prefsEditor;
-    private String key_isDatabaseInitialized = "isDatabaseInitialized";
+	private static final String PREF_FILE = "CLSeatMapPrefs";
+	private SharedPreferences appSharedPrefs;
+	private SharedPreferences.Editor prefsEditor;
+	private String key_DBVersion = "DB_VER";
 
-    public AppConfig(Context context) {
-        this.appSharedPrefs = context.getSharedPreferences(PREF_FILE, Activity.MODE_PRIVATE);
-        this.prefsEditor = appSharedPrefs.edit();
-    }
+	public AppConfig(Context context) {
+		this.appSharedPrefs = context.getSharedPreferences(PREF_FILE,
+				Activity.MODE_PRIVATE);
+		this.prefsEditor = appSharedPrefs.edit();
+	}
 
-    public boolean isDatabaseInitialized() {
-        return appSharedPrefs.getBoolean(key_isDatabaseInitialized, false);
-    }
+	public int getDBVer() {
+		return appSharedPrefs.getInt(key_DBVersion, -1);
+	}
 
-    public void setDatabaseInitialized() {
-        prefsEditor.putBoolean(key_isDatabaseInitialized, true).commit();
-    }
+	public void setDBVer(int version) {
+		prefsEditor.putInt(key_DBVersion, version).commit();
+	}
 }

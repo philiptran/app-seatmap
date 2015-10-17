@@ -60,7 +60,7 @@ public abstract class BaseFloorView extends TileView {
 		//
 		slideToAndCenter(cl.getX(), cl.getY());
 	}
-
+	
 	public void setMarkerOnClickListener(OnClickListener listener) {
 		contactMarker.setOnClickListener(listener);
 	}

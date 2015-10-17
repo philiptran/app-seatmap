@@ -6,8 +6,10 @@ import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -20,6 +22,7 @@ import cl.seatmap.domain.ContactLocation;
 import cl.seatmap.domain.ExchangeContact;
 import cl.seatmap.widget.DetailFloorView;
 import cl.seatmap.widget.FindContactAutoCompleteTextView;
+import cl.seatmap.widget.FindContactAutoCompleteTextView.OnSpeakToMeListener;
 
 import com.qozix.tileview.TileView;
 
@@ -31,8 +34,10 @@ import com.qozix.tileview.TileView;
 public class MainActivity extends Activity {
 	public static final String TAG = "CL-SEAT-MAP";
 	protected static final int TRANSITION_DURATION = 500;
-	private static final int NEARBY_DISTANCE = 350;
+	private static final int NEARBY_DISTANCE = 400;
+	private static final int REQUEST_VOICE_RECOGNIZER = 1234;
 	//
+	private AppConfig appConfig;
 	private FindContactAutoCompleteTextView findContactAutocomplete;
 	private DetailFloorView detailFloorView;
 	private ContactLocationDAO contactLocationDAO;
@@ -46,15 +51,32 @@ public class MainActivity extends Activity {
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.activity_main);
 		//
+		appConfig = new AppConfig(this);
+		// Force reload database from app's assets when we upgrade the app
+		if (appConfig.getDBVer() < ContactLocationDAO.DATABASE_VERSION) {
+			ContactLocationDAO.forceDatabaseReload(this);
+			appConfig.setDBVer(ContactLocationDAO.DATABASE_VERSION);
+		}
 		contactLocationDAO = new ContactLocationDAO(this);
-		// TODO how to force database reload only for first run after the upgrade?
-		ContactLocationDAO.forceDatabaseReload(this);
 		//
 		findContactAutocomplete = (FindContactAutoCompleteTextView) findViewById(R.id.findcontact_autocomplete);
 		findContactAutocomplete
 				.setOnItemClickListener(findContactOnItemClickListener);
 		findContactAutocomplete
 				.setLocationTextOnClickListener(currentLocationTextOnClickListener);
+		findContactAutocomplete
+				.setOnSpeakToMeListener(new OnSpeakToMeListener() {
+					@Override
+					public void startVoiceRecognitionActivity() {
+						Intent intent = new Intent(
+								RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+						intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+								RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+						intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+								"uFind: Please speak slowly and enunciate clearly.");
+						startActivityForResult(intent, REQUEST_VOICE_RECOGNIZER);
+					}
+				});
 		//
 		detailFloorView = new DetailFloorView(this, contactLocationDAO);
 		detailFloorView.addTileViewEventListener(detailFloorViewEventListener);
@@ -65,9 +87,19 @@ public class MainActivity extends Activity {
 		main.addView(detailFloorView);
 		main.bringChildToFront(findContactAutocomplete);
 		main.refreshDrawableState();
-		
+
 		//
 		findContactAutocomplete.maximize();
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == REQUEST_VOICE_RECOGNIZER && resultCode == RESULT_OK) {
+			List<String> matches = data
+					.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+			String firstMatch = matches.get(0);
+			findContactAutocomplete.setText(firstMatch);
+		}
 	}
 
 	private AdapterView.OnItemClickListener findContactOnItemClickListener = new AdapterView.OnItemClickListener() {
@@ -103,10 +135,14 @@ public class MainActivity extends Activity {
 				}
 				//
 				Log.e(TAG, errorMessage);
+				final View fView = view;
 				UIUtils.showAlert(parent.getContext(), "Not Found",
 						errorMessage, new DialogInterface.OnClickListener() {
 							@Override
-							public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+							public void onClick(
+									DialogInterface paramDialogInterface,
+									int paramInt) {
+								UIUtils.showSoftInput(fView);
 								findContactAutocomplete.maximize();
 							}
 						});
@@ -196,27 +232,20 @@ public class MainActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			detailMarkerSwitchOn = !detailMarkerSwitchOn;
-			if(detailMarkerSwitchOn) {
+			if (detailMarkerSwitchOn) {
 				detailFloorView.showNeighbors();
 				findContactAutocomplete.showCurrentContactView();
 			} else {
 				detailFloorView.hideNeighbors();
 				findContactAutocomplete.hideCurrentContactView();
-			}	
+			}
 		}
 	};
 
 	private OnClickListener currentLocationTextOnClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View paramView) {
-			// TODO
+			detailFloorView.moveToContact();
 		}
 	};
-	// private View.OnClickListener nearbyTextOnClickListener = new
-	// View.OnClickListener() {
-	// @Override
-	// public void onClick(View v) {
-	// detailFloorView.calloutNearby();
-	// }
-	// };
 }

@@ -6,7 +6,7 @@ import java.util.Date;
 /**
  * 
  * @author philiptrannp
- *
+ * 
  */
 public class OAuth2AccessToken implements Serializable {
 	private static final long serialVersionUID = -1L;
@@ -14,11 +14,9 @@ public class OAuth2AccessToken implements Serializable {
 	private String value;
 	private Date expiration;
 
-	/**
-	 * Create an access token from the value provided.
-	 */
-	public OAuth2AccessToken(String value) {
-		this.value = value;
+	public OAuth2AccessToken() {
+		this.value = null;
+		this.expiration = null;
 	}
 
 	/**
@@ -27,7 +25,7 @@ public class OAuth2AccessToken implements Serializable {
 	 * @return true if the expiration is befor ethe current time
 	 */
 	public boolean isExpired() {
-		return expiration != null && expiration.before(new Date());
+		return expiration == null || expiration.before(new Date());
 	}
 
 	public int getExpiresIn() {

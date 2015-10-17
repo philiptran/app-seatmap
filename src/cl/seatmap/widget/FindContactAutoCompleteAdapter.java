@@ -84,22 +84,26 @@ public class FindContactAutoCompleteAdapter extends
 		ExchangeContact contact = getItem(position);
 
 		TextView nameText = (TextView) row.findViewById(R.id.name);
-		String name = UIUtils.nullSafe(contact.getName());
-		name = name.replaceAll("(?i)(" + searchText + ")",
-				"<font color='#19A3A3'><b>$1</b></font>");
-		nameText.setText(Html.fromHtml(name));
+		nameText.setText(UIUtils.highlight(contact.getName(), searchText));
+
+		TextView titleText = (TextView) row.findViewById(R.id.title);
+		titleText.setText(UIUtils.highlight(contact.getTitle(), searchText));
 
 		TextView phoneText = (TextView) row.findViewById(R.id.phone);
-		String phone = UIUtils.nullSafe(contact.getPhone());
-		phone = phone.replaceAll("(?i)(" + searchText + ")",
-				"<font color='#19A3A3'><b>$1</b></font>");
-		phoneText.setText(Html.fromHtml(phone));
+		phoneText.setText(UIUtils.highlight(contact.getPhone(), searchText));
 
+		// optional mobile number
+		String mobile = contact.getMobile();
+		if (mobile == null || mobile.isEmpty()) {
+			ViewGroup vg = (ViewGroup) row.findViewById(R.id.layout_mobile);
+			vg.setVisibility(View.GONE);
+		} else {
+			TextView mobileText = (TextView) row.findViewById(R.id.mobile);
+			mobileText.setText(UIUtils.highlight(mobile, searchText));
+		}
 		TextView locationText = (TextView) row.findViewById(R.id.location);
-		String location = UIUtils.nullSafe(contact.getOfficeLocation());
-		location = location.replaceAll("(?i)(" + searchText + ")",
-				"<font color='#19A3A3'><b>$1</b></font>");
-		locationText.setText(Html.fromHtml(location));
+		locationText.setText(UIUtils.highlight(contact.getOfficeLocation(),
+				searchText));
 
 		ImageView flagView = (ImageView) row.findViewById(R.id.flag_icon);
 		flagView.setImageResource(UIUtils.getFlagResource(contact.getCountry()));

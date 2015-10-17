@@ -6,13 +6,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.util.Log;
 import cl.seatmap.R;
 import cl.seatmap.domain.ExchangeContact;
 import cl.seatmap.rest.oauth2.ClientCredentialsResourceDetails;
 import cl.seatmap.rest.oauth2.OAuth2RestTemplate;
+
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+import com.android.volley.VolleyError;
 
 /**
  * 
@@ -33,12 +39,12 @@ public class ExchangeContactService {
 		this.baseURL = context.getResources()
 				.getText(R.string.EWS_REST_BASEURL).toString();
 		//
-		ClientCredentialsResourceDetails resource = new ClientCredentialsResourceDetails();
-		resource.setAccessTokenUri(this.baseURL + REST_ACCESS_TOKEN);
-		resource.setClientId(REST_CLIENT_ID);
-		resource.setClientSecret(REST_CLIENT_SECRET);
+		ClientCredentialsResourceDetails restResource = new ClientCredentialsResourceDetails();
+		restResource.setAccessTokenUri(this.baseURL + REST_ACCESS_TOKEN);
+		restResource.setClientId(REST_CLIENT_ID);
+		restResource.setClientSecret(REST_CLIENT_SECRET);
 		//
-		this.restTemplate = new OAuth2RestTemplate(resource);
+		this.restTemplate = new OAuth2RestTemplate(context, restResource);
 		this.dummyMode = "true".equalsIgnoreCase(context.getResources()
 				.getText(R.string.dummyMode).toString());
 	}
@@ -48,35 +54,43 @@ public class ExchangeContactService {
 	 * @param name
 	 * @return list of contacts or throws Exception. Never return NULL.
 	 */
-	public List<ExchangeContact> findContact(String name) {
-		List<ExchangeContact> list = new ArrayList<ExchangeContact>();
-		try {
-			// String response = retrieveContact(name);
-			Map<String, String> params = new HashMap<String, String>();
-			//params.put("country", "Singapore");
-			params.put("name", name);
-			if (dummyMode) {
-				params.put("dummy", "true");
-			}
-			//
-			String response = this.restTemplate.get(this.baseURL
-					+ REST_FIND_CONTACT, params);
-			//
-			JSONArray jsonArray = new JSONArray(response);
-			for (int i = 0; i < jsonArray.length(); i++) {
-				JSONObject item = jsonArray.getJSONObject(i);
-				//
-				ExchangeContact contact = new ExchangeContact(
-						item.getString("name"), item.getString("title"),
-						item.getString("email"), item.getString("department"),
-						item.getString("phone"), item.getString("mobile"),
-						item.getString("officeLocation"),
-						item.getString("country"));
-				list.add(contact);
-			}
-			return list;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+	public void findContact(String name,
+			final Listener<List<ExchangeContact>> listener,
+			final ErrorListener errorListener) {
+		Map<String, String> params = new HashMap<String, String>();
+		// params.put("country", "Singapore");
+		params.put("name", name);
+		if (dummyMode) {
+			params.put("dummy", "true");
 		}
+		restTemplate.getArray(this.baseURL + REST_FIND_CONTACT, params,
+				new Listener<JSONArray>() {
+					@Override
+					public void onResponse(JSONArray jsonArray) {
+						List<ExchangeContact> contacts = new ArrayList<ExchangeContact>();
+						try {
+							for (int i = 0; i < jsonArray.length(); i++) {
+								JSONObject item = jsonArray.getJSONObject(i);
+								//
+								ExchangeContact contact = new ExchangeContact(
+										item.getString("name"), item
+												.getString("title"), item
+												.getString("email"), item
+												.getString("department"), item
+												.getString("phone"), item
+												.getString("mobile"), item
+												.getString("officeLocation"),
+										item.getString("country"));
+								contacts.add(contact);
+							}
+							//
+							listener.onResponse(contacts);
+						} catch (JSONException ex) {
+							Log.e("ExchangeContactService",
+									"Could not parse JSONArray.", ex);
+							errorListener.onErrorResponse(new VolleyError(ex));
+						}
+					}
+				}, errorListener);
 	}
 }

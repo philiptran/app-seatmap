@@ -19,7 +19,7 @@ import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 public class ContactLocationDAO extends SQLiteAssetHelper {
 	// All Static variables
 	// Database Version
-	private static final int DATABASE_VERSION = 1;
+	public static final int DATABASE_VERSION = 2;
 
 	// Database Name
 	private static final String DATABASE_NAME = "contacts.db";
@@ -45,17 +45,19 @@ public class ContactLocationDAO extends SQLiteAssetHelper {
 		// This database is read-only.
 		setForcedUpgrade();
 	}
+
 	/**
 	 * Forces the database to reload from the default asset file.
 	 */
-	public static void forceDatabaseReload(Context context){
+	public static void forceDatabaseReload(Context context) {
 		ContactLocationDAO dbHelper = new ContactLocationDAO(context);
-	    dbHelper.setForcedUpgrade();
-	    SQLiteDatabase db = dbHelper.getWritableDatabase();
-	    db.setVersion(-1);
-	    db.close();
-	    db = dbHelper.getWritableDatabase();
+		dbHelper.setForcedUpgrade();
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		db.setVersion(-1);
+		db.close();
+		db = dbHelper.getWritableDatabase();
 	}
+
 	// @Override
 	// public void onCreate(SQLiteDatabase db) {
 	// String createSQL = "CREATE TABLE " + TABLE_CONTACT_LOCATION + "("

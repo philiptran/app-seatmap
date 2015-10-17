@@ -9,8 +9,6 @@ import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -19,6 +17,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
@@ -33,23 +32,26 @@ import cl.seatmap.domain.ExchangeContact;
 import cl.seatmap.service.ExchangeContactService;
 import cl.seatmap.utils.Debouncer;
 
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+import com.android.volley.VolleyError;
+
 /**
  * 
  * @author philiptrannp
  * 
  */
 public class FindContactAutoCompleteTextView extends RelativeLayout {
-	final int DRAWABLE_LEFT = 0;
-	final int DRAWABLE_TOP = 1;
-	final int DRAWABLE_RIGHT = 2;
-	final int DRAWABLE_BOTTOM = 3;
+	private static final int DEBOUNCER_DELAY_MS = 200;
 	//
 	private AutoCompleteTextView textView;
 	private FindContactAutoCompleteAdapter findContactAutoCompleteAdapter;
 	private ExchangeContactService exchangeContactService;
-	private Drawable searchIcon;
+	private Drawable menuIcon;
 	private Drawable removeIcon;
+	private Drawable micIcon;
 	private TransitionDrawable backgroundTransition;
+	private OnSpeakToMeListener onSpeakToItListener;
 	//
 	private ExchangeContact currentContact;
 	private View currentContactView;
@@ -59,13 +61,12 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 	public FindContactAutoCompleteTextView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		setBackground(getResources().getDrawable(R.drawable.bg_transition));
-		searchIcon = getResources().getDrawable(R.drawable.ic_action_search);
-		removeIcon = getResources().getDrawable(R.drawable.ic_action_remove);
-		searchIcon.setBounds(0, 0, searchIcon.getIntrinsicWidth(),
-				searchIcon.getIntrinsicHeight());
-		removeIcon.setBounds(0, 0, removeIcon.getIntrinsicWidth(),
-				removeIcon.getIntrinsicHeight());
-
+		menuIcon = getResources().getDrawable(R.drawable.ic_menu);
+		menuIcon.setBounds(0, 0, 35, 35);
+		removeIcon = getResources().getDrawable(R.drawable.ic_remove);
+		removeIcon.setBounds(0, 0, 40, 40);
+		micIcon = getResources().getDrawable(R.drawable.ic_mic);
+		micIcon.setBounds(0, 0, 40, 40);
 		// Main Layout
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
 				LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -91,6 +92,7 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		params = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT,
 				LayoutParams.WRAP_CONTENT);
 		params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+		params.setMargins(20, 20, 20, 20);
 		//
 		textView = new AutoCompleteTextView(context);
 		textView.setId(R.id.findcontact_textview);
@@ -99,16 +101,17 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		textView.setLines(1);
 		textView.setCursorVisible(false);
 		textView.setTextColor(Color.BLACK);
-		textView.setTextSize(18);
+		textView.setTextSize(16);
 		textView.setBackground(getResources().getDrawable(
 				R.drawable.bg_findcontact_textview));
-		textView.setCompoundDrawables(searchIcon, null, null, null);
-		textView.setCompoundDrawablePadding(5);
-		textView.setPadding(10, 10, 10, 10);
+		//
+		textView.setCompoundDrawables(menuIcon, null, micIcon, null);
+		textView.setCompoundDrawablePadding(30);
+		textView.setPadding(25, 25, 25, 25);
 		textView.setDropDownWidth(LayoutParams.MATCH_PARENT);
+		textView.setDropDownHeight(LayoutParams.MATCH_PARENT);
 		textView.setDropDownVerticalOffset(0);
-		textView.setDropDownHorizontalOffset(0);
-
+		textView.setDropDownHorizontalOffset(-20);
 		// overwrite default 3d background for dropdown list
 		textView.setDropDownBackgroundDrawable(getResources().getDrawable(
 				R.drawable.background_dropdown));
@@ -136,6 +139,10 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		TextView phoneText = (TextView) currentContactView
 				.findViewById(R.id.phone);
 		phoneText.setOnClickListener(phoneTextOnClickListener);
+
+		TextView mobileText = (TextView) currentContactView
+				.findViewById(R.id.mobile);
+		mobileText.setOnClickListener(mobileTextOnClickListener);
 
 		View closeIcon = (View) currentContactView
 				.findViewById(R.id.close_icon);
@@ -179,6 +186,15 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 			v.getContext().startActivity(callIntent);
 		}
 	};
+	private View.OnClickListener mobileTextOnClickListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			String number = "tel:" + currentContact.getMobile();
+			Intent callIntent = new Intent(Intent.ACTION_CALL,
+					Uri.parse(number));
+			v.getContext().startActivity(callIntent);
+		}
+	};
 
 	public void setCurrentContact(ExchangeContact contact) {
 		this.currentContact = contact;
@@ -188,13 +204,31 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 				.findViewById(R.id.name);
 		nameText.setText(currentContact.getName());
 		//
+		TextView titleText = (TextView) currentContactView
+				.findViewById(R.id.title);
+		titleText.setText(UIUtils.nullSafe(currentContact.getTitle()));
+		//
 		TextView phoneText = (TextView) currentContactView
 				.findViewById(R.id.phone);
-		phoneText.setText(currentContact.getPhone());
+		phoneText.setText(UIUtils.nullSafe(currentContact.getPhone()));
+
+		// optional mobile number
+		ViewGroup vg = (ViewGroup) currentContactView
+				.findViewById(R.id.layout_mobile);
+		String mobile = contact.getMobile();
+		if (mobile == null || mobile.isEmpty()) {
+			vg.setVisibility(View.GONE);
+		} else {
+			TextView mobileText = (TextView) currentContactView
+					.findViewById(R.id.mobile);
+			mobileText.setText(mobile);
+			vg.setVisibility(View.VISIBLE);
+		}
 		//
 		TextView locationText = (TextView) currentContactView
 				.findViewById(R.id.location);
-		locationText.setText(currentContact.getOfficeLocation());
+		locationText.setText(UIUtils.nullSafe(currentContact
+				.getOfficeLocation()));
 		//
 		ImageView flagView = (ImageView) currentContactView
 				.findViewById(R.id.flag_icon);
@@ -206,7 +240,8 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 		//
 		TextView departmentText = (TextView) currentContactView
 				.findViewById(R.id.department);
-		departmentText.setText(currentContact.getDepartment());
+		departmentText
+				.setText(UIUtils.nullSafe(currentContact.getDepartment()));
 	}
 
 	public void setOnItemClickListener(
@@ -227,20 +262,12 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 	}
 
 	public void clearText() {
-		this.textView.setText(null);
+		setText(null);
 	}
 
-	// /**
-	// * Set click listener for the Nearby text of the
-	// * <code>currentContactView</code>
-	// *
-	// * @param listener
-	// */
-	// public void setNearbyTextOnClickListener(View.OnClickListener listener) {
-	// TextView nearbyText = (TextView) currentContactView
-	// .findViewById(R.id.nearby);
-	// nearbyText.setOnClickListener(listener);
-	// }
+	public void setText(String text) {
+		this.textView.setText(text);
+	}
 
 	public void showCurrentContactView() {
 		currentContactView.setVisibility(VISIBLE);
@@ -313,13 +340,23 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 			}
 			//
 			if (event.getAction() == MotionEvent.ACTION_UP) {
-				if (event.getX() <= searchIcon.getBounds().width()) {
-					Log.d(MainActivity.TAG,
-							"Search icon is touched. Do nothing.");
+				if (event.getX() <= menuIcon.getBounds().width() + 50) {
+					Log.d(MainActivity.TAG, "Menu icon is touched. Do nothing.");
+					UIUtils.showAlert(getContext(), "Test",
+							"Menu Icon is touched");
 					return true;
 				} else if (event.getX() >= textView.getWidth()
-						- removeIcon.getBounds().width()) {
-					textView.setText("");
+						- micIcon.getBounds().width() - 50) {
+					if (textView.getText().toString().isEmpty()) {
+						// micIcon is touched.
+						if (onSpeakToItListener != null) {
+							onSpeakToItListener.startVoiceRecognitionActivity();
+						}
+						return true;
+					} else {
+						// removeIcon is touched.
+						textView.setText(null);
+					}
 				}
 				//
 				UIUtils.showSoftInput(textView);
@@ -330,14 +367,58 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 			return false;
 		}
 	};
+
 	//
+	private class FindContactResponseListener implements
+			Listener<List<ExchangeContact>>, ErrorListener {
+		private String mText;
+
+		public FindContactResponseListener(final String text) {
+			this.mText = text;
+		}
+
+		private boolean discardResponse() {
+			// should discard the response as user has changed the text
+			return !mText.equals(textView.getText().toString().trim());
+		}
+
+		@Override
+		public void onResponse(List<ExchangeContact> contacts) {
+			if (!discardResponse()) {
+				if (contacts.isEmpty()) {
+					UIUtils.showAlert(getContext(), "Contact Not Found",
+							"Sorry, we could not find the name.");
+				} else {
+					findContactAutoCompleteAdapter.clear();
+					findContactAutoCompleteAdapter.setSearchText(mText);
+					findContactAutoCompleteAdapter.addAll(contacts);
+					findContactAutoCompleteAdapter.notifyDataSetChanged();
+					// hide the home icon
+					homeIcon.setVisibility(View.INVISIBLE);
+				}
+			}
+		}
+
+		@Override
+		public void onErrorResponse(VolleyError error) {
+			if (!discardResponse()) {
+				UIUtils.showAlert(getContext(), "Error",
+						"Exchang service is not available."
+								+ "\r\nPlease try again later." + "\r\nCause: "
+								+ error.getMessage());
+			}
+		}
+	}
+
 	private Debouncer<String> findContactDebouncer = new Debouncer<String>(
 			new Debouncer.Function<String>() {
 				@Override
 				public void call(String text) {
-					new FindContactAsyncTask(text).execute();
+					FindContactResponseListener listener = new FindContactResponseListener(
+							text);
+					exchangeContactService.findContact(text, listener, listener);
 				}
-			}, 300);
+			}, DEBOUNCER_DELAY_MS);
 	//
 	private TextWatcher findContactTextWatcher = new TextWatcher() {
 		@Override
@@ -357,56 +438,22 @@ public class FindContactAutoCompleteTextView extends RelativeLayout {
 			// display remove text icon only if there is text
 			String text = textView.getText().toString().trim();
 			if (!text.isEmpty()) {
-				textView.setCompoundDrawables(searchIcon, null, removeIcon,
-						null);
+				textView.setCompoundDrawables(menuIcon, null, removeIcon, null);
 				// debounce the search
 				findContactDebouncer.call(text);
 			} else {
-				textView.setCompoundDrawables(searchIcon, null, null, null);
+				textView.setCompoundDrawables(menuIcon, null, micIcon, null);
 				// destroy pending task
 				findContactDebouncer.destroy();
 			}
 		}
 	};
 
-	private class FindContactAsyncTask extends
-			AsyncTask<String, Void, List<ExchangeContact>> {
-		private String text;
+	public void setOnSpeakToMeListener(OnSpeakToMeListener listener) {
+		this.onSpeakToItListener = listener;
+	}
 
-		public FindContactAsyncTask(String text) {
-			this.text = text;
-		}
-
-		@Override
-		protected List<ExchangeContact> doInBackground(String... params) {
-			try {
-				return exchangeContactService.findContact(text);
-			} catch (Exception e) {
-				Log.e("RetrieveContactAsyncTask", "Fail to find contact '"
-						+ text + "'", e);
-				return null; // to tell onPostExecute that an error has
-								// occurred.
-			}
-		}
-
-		@Override
-		protected void onPostExecute(List<ExchangeContact> contacts) {
-			if (this.text.equalsIgnoreCase(textView.getText().toString())) {
-				if (contacts == null) {
-					UIUtils.showAlert(getContext(), "Error",
-							"Exchang service is not available.\r\nPlease try again later.");
-				} else if (contacts.isEmpty()) {
-					UIUtils.showAlert(getContext(), "Not Found",
-							"Sorry, the name could not be found.");
-				} else {
-					findContactAutoCompleteAdapter.clear();
-					findContactAutoCompleteAdapter.setSearchText(this.text);
-					findContactAutoCompleteAdapter.addAll(contacts);
-					findContactAutoCompleteAdapter.notifyDataSetChanged();
-					// hide the home icon
-					homeIcon.setVisibility(View.INVISIBLE);
-				}
-			}
-		}
+	public interface OnSpeakToMeListener {
+		void startVoiceRecognitionActivity();
 	}
 }
