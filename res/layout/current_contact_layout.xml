@@ -17,29 +17,25 @@
             android:id="@+id/level"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="3dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="0dp"
+            android:paddingLeft="17dp"
+            android:paddingRight="20dp"
             android:text="L1"
-            android:textColor="#FF0000"
+            android:textColor="#FFFFFF"
             android:textSize="20dp"
-            android:textStyle="bold" />
-
-        <View
-            android:id="@+id/level_div"
-            android:layout_width="1dp"
-            android:layout_height="30dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_toRightOf="@id/level"
-            android:background="#FFFFFF" />
+            android:textStyle="bold"
+            android:background="@color/red_transparent" />
 
         <TextView
             android:id="@+id/department"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="30dp"
-            android:layout_marginTop="3dp"
-            android:layout_toRightOf="@id/level_div"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="2dp"
+            android:layout_toRightOf="@id/level"
             android:ellipsize="end"
             android:singleLine="true"
             android:text="PSG-CoE (Security)"
@@ -49,12 +45,13 @@
 
         <ImageView
             android:id="@+id/close_icon"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="2dp"
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:padding="0dp"
-            android:src="@drawable/ic_action_remove" />
+            android:src="@drawable/ic_remove" />
     </RelativeLayout>
 
     <RelativeLayout
@@ -93,6 +90,18 @@
                 android:textSize="18dp"
                 android:textStyle="normal" />
 
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="2dp"
+                android:paddingLeft="3dp"
+                android:paddingTop="0dp"
+                android:text="Lead Software Engineer"
+                android:textColor="#666666"
+                android:textSize="16dp"
+                android:textStyle="italic" />
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -100,11 +109,10 @@
 
                 <ImageView
                     android:id="@+id/call_icon"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:padding="0dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_action_call_green" />
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:paddingLeft="3dp"
+                    android:src="@drawable/ic_phone_green" />
 
                 <TextView
                     android:id="@+id/phone"
@@ -120,23 +128,49 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/layout_mobile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="0dp" >
+
+                <ImageView
+                    android:id="@+id/mobile_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:padding="0dp"
+                    android:src="@drawable/ic_cellphone_green" />
+
+                <TextView
+                    android:id="@+id/mobile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/mobile_icon"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="3dp"
+                    android:paddingTop="2dp"
+                    android:text="+65 91234567"
+                    android:textColor="#666666"
+                    android:textSize="16dp" />
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="3dp" >
 
                 <ImageView
                     android:id="@+id/place_icon"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:padding="0dp"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/ic_action_place" />
+                    android:src="@drawable/ic_location" />
 
                 <TextView
                     android:id="@+id/location"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="30dp"
+                    android:layout_marginRight="35dp"
                     android:layout_toRightOf="@id/place_icon"
                     android:paddingBottom="3dp"
                     android:paddingLeft="3dp"
@@ -150,8 +184,9 @@
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:layout_alignParentRight="true"
-                    android:paddingBottom="5dp"
+                    android:layout_marginRight="5dp"
                     android:src="@drawable/flag_sg" />
+
             </RelativeLayout>
         </LinearLayout>
     </RelativeLayout>

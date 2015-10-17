@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" >
-    <solid android:color="#DD19A3A3"/>
-</shape>
+<!-- <shape xmlns:android="http://schemas.android.com/apk/res/android" > -->
+<!-- <solid android:color="#DD19A3A3"/> -->
+<!-- </shape> -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    <!-- paint the background in black - bigger -->
+    <item>
+        <shape android:shape="rectangle" >
+            <solid android:color="#DDFFFFFF" />
+            <!-- <corners android:radius="3dp" /> -->
+        </shape>
+    </item>
+    <!-- paint another smaller layer to create the border -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="1dp">
+        <shape android:shape="rectangle" >
+            <solid android:color="#DD19A3A3" />
+            <!-- <corners android:radius="1dp" /> -->
+        </shape>
+    </item>
+
+</layer-list>
